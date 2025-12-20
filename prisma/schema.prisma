@@ -1,0 +1,128 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// -------------------------------------------------
+// 基本エンティティ（継承はテーブル間のリレーションで実現）
+// -------------------------------------------------
+model Employee {
+  id            String   @id @default(uuid())
+  employeeNumber String   @unique
+  name          String
+  email         String   @unique
+  companyName   String?
+  department    String?
+  phoneNumber   String?   // "000-0000-0000" フォーマット（バリデーションはアプリ側で実装）
+
+  // 継承先テーブルとの 1‑対‑1 関係
+  doctor        Doctor?
+  nurse         Nurse?
+
+  // 健康診断結果は将来追加予定（現時点では未使用）
+  healthResults HealthCheckResult[]
+
+  reservations  Reservation[]   @relation("PatientReservations")
+}
+
+model Doctor {
+  id                 String   @id @default(uuid())
+  employeeId         String   @unique
+  employee           Employee @relation(fields: [employeeId], references: [id])
+  title              String?
+  minDurationMin     Int
+  defaultDurationMin Int
+  maxDurationMin     Int
+
+  schedules          DoctorSchedule[]
+  reservations       Reservation[] @relation("DoctorReservations")
+}
+
+model Nurse {
+  id         String   @id @default(uuid())
+  employeeId String   @unique
+  employee   Employee @relation(fields: [employeeId], references: [id])
+  title      String?
+  // 看護師は予約に必ずしも紐付かないので、Reservation 側は nullable にしておく
+}
+
+model DoctorSchedule {
+  id               String   @id @default(uuid())
+  doctorId         String
+  doctor           Doctor   @relation(fields: [doctorId], references: [id])
+  startUtc         DateTime // 医師が診療できる開始時刻（UTC）
+  endUtc           DateTime // 医師が診療できる終了時刻（UTC）
+
+  @@unique([doctorId, startUtc, endUtc]) // 同一医師の重複ブロック防止
+}
+
+model Reservation {
+  id            String   @id @default(uuid())
+  doctorId      String
+  employeeId    String
+  nurseId       String?   // 必須ではない
+  startUtc      DateTime
+  endUtc        DateTime
+
+  doctor        Doctor   @relation(fields: [doctorId], references: [id])
+  employee      Employee @relation(fields: [employeeId], references: [id])
+  nurse         Nurse?   @relation(fields: [nurseId], references: [id])
+
+  // 将来的にステータス管理したいときのためのフィールド（現時点では未使用）
+  status        String?   @default("PENDING")
+}
+
+model Workday {
+  id          String @id @default(uuid())
+  dayOfWeek   Int    // 0=Sun … 6=Sat
+}
+
+// メールテンプレート（リマインダー用は「Reminder」名前で登録想定）
+model EmailTemplate {
+  id      String @id @default(uuid())
+  name    String @unique
+  subject String
+  body    String   // Mustache / Handlebars 形式の文字列
+}
+
+// リマインダー設定（X日前・YY時に送信）
+model ReminderConfig {
+  id          String @id @default(uuid())
+  daysBefore  Int    // 例: 3 → 予約日の 3日前
+  sendHour    Int    // 0‑23 (UTC)
+  sentRecords ReminderSent[]
+}
+
+// リマインダー送信履歴（二重送信防止用）
+model ReminderSent {
+  id            String @id @default(uuid())
+  reservationId String
+  configId      String
+  sentAtUtc     DateTime @default(now())
+
+  reservation   Reservation    @relation(fields: [reservationId], references: [id])
+  config        ReminderConfig @relation(fields: [configId], references: [id])
+
+  @@unique([reservationId, configId]) // 同一予約・設定の重複送信防止
+}
+
+// ユーザータイムゾーン（フロント側で表示変換に使用）
+model UserTimezone {
+  userId   String @id        // Azure AD の Object ID と同一
+  timezone String               // IANA タイムゾーン文字列例: "Asia/Tokyo"
+}
+
+// 将来的に健康診断結果テーブル（現在は未利用）
+// model HealthCheckResult {
+//   id          String   @id @default(uuid())
+//   employeeId  String
+//   checkDate   DateTime
+//   bloodPressure String?
+//   bloodSugar    String?
+//   // ...その他項目
+//   employee   Employee @relation(fields: [employeeId], references: [id])
+// }

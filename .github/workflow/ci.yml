@@ -1,0 +1,78 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test-and-build:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: healthapp
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js (v18)
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: npm
+
+      - name: Install all workspaces
+        run: npm ci
+
+      # ---------- Lint ----------
+      - name: Lint
+        run: npm run lint
+
+      # ---------- Unit Tests ----------
+      - name: Backend unit tests
+        working-directory: ./apps/backend
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/healthapp?schema=public
+        run: npm test
+
+      - name: Frontend unit tests (Vitest)
+        working-directory: ./apps/frontend
+        run: npm test
+
+      # ---------- Build Docker images ----------
+      - name: Build backend image
+        run: docker build -t health-app-backend -f .docker/Backend.Dockerfile .
+
+      - name: Build frontend image
+        run: docker build -t health-app-frontend -f .docker/Frontend.Dockerfile .
+
+      # ---------- (Optional) Push to GHCR ----------
+      # - name: Log in to GitHub Container Registry
+      #   uses: docker/login-action@v3
+      #   with:
+      #     registry: ghcr.io
+      #     username: ${{ github.actor }}
+      #     password: ${{ secrets.GITHUB_TOKEN }}
+
+      # - name: Push backend image
+      #   run: |
+      #     docker tag health-app-backend ghcr.io/${{ github.repository }}/backend:latest
+      #     docker push ghcr.io/${{ github.repository }}/backend:latest
+
+      # - name: Push frontend image
+      #   run: |
+      #     docker tag health-app-frontend ghcr.io/${{ github.repository }}/frontend:latest
+      #     docker push ghcr.io/${{ github.repository }}/frontend:latest

@@ -1,0 +1,26 @@
+[
+  {
+    "employeeNumber": "E001",
+    "name": "山田 太郎",
+    "email": "taro.yamada@example.com",
+    "companyName": "ABC株式会社",
+    "department": "営業部",
+    "phoneNumber": "090-1234-5678"
+  },
+  {
+    "employeeNumber": "E002",
+    "name": "鈴木 花子",
+    "email": "hanako.suzuki@example.com",
+    "companyName": "XYZ株式会社",
+    "department": "総務部",
+    "phoneNumber": "080-8765-4321"
+  },
+  {
+    "employeeNumber": "E003",
+    "name": "佐藤 次郎",
+    "email": "jiro.sato@example.com",
+    "companyName": "ABC株式会社",
+    "department": "開発部",
+    "phoneNumber": "070-1111-2222"
+  }
+]
