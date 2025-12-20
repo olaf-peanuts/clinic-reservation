@@ -11,7 +11,7 @@ export class MockDataLoader {
     const filePath = path.resolve(__dirname, '../../../mock-data/employees.json');
     const raw = fs.readFileSync(filePath, 'utf-8');
     this.employees = JSON.parse(raw);
-    return this.employees;
+    return this.employees || [];
   }
 
   /** 社員番号で検索 */

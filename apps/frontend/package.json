@@ -9,7 +9,7 @@
     "test": "playwright test"
   },
   "dependencies": {
-    "@myorg/shared": "*",
+    "@myorg/shared": "file:../../libs/shared",
     "axios": "^1.7.2",
     "react": "^18.3.0",
     "react-dom": "^18.3.0",

@@ -23,9 +23,6 @@ model Employee {
   doctor        Doctor?
   nurse         Nurse?
 
-  // 健康診断結果は将来追加予定（現時点では未使用）
-  healthResults HealthCheckResult[]
-
   reservations  Reservation[]   @relation("PatientReservations")
 }
 
@@ -47,6 +44,7 @@ model Nurse {
   employeeId String   @unique
   employee   Employee @relation(fields: [employeeId], references: [id])
   title      String?
+  reservations Reservation[] @relation("NurseReservations")
   // 看護師は予約に必ずしも紐付かないので、Reservation 側は nullable にしておく
 }
 
@@ -68,9 +66,10 @@ model Reservation {
   startUtc      DateTime
   endUtc        DateTime
 
-  doctor        Doctor   @relation(fields: [doctorId], references: [id])
-  employee      Employee @relation(fields: [employeeId], references: [id])
-  nurse         Nurse?   @relation(fields: [nurseId], references: [id])
+  doctor        Doctor   @relation("DoctorReservations", fields: [doctorId], references: [id])
+  employee      Employee @relation("PatientReservations", fields: [employeeId], references: [id])
+  nurse         Nurse?   @relation("NurseReservations", fields: [nurseId], references: [id])
+  reminderSents ReminderSent[]
 
   // 将来的にステータス管理したいときのためのフィールド（現時点では未使用）
   status        String?   @default("PENDING")
