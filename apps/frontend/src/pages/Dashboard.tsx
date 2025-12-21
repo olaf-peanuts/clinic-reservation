@@ -723,52 +723,50 @@ export default function Dashboard() {
             <p className="text-gray-600 mb-6">カレンダーに表示する曜日と、各曜日の診療時間を設定してください。</p>
 
             <div className="space-y-3 mb-6">
-              <div className="grid grid-cols-2 gap-4">
-                {[
-                  { value: 0, label: '日' },
-                  { value: 1, label: '月' },
-                  { value: 2, label: '火' },
-                  { value: 3, label: '水' },
-                  { value: 4, label: '木' },
-                  { value: 5, label: '金' },
-                  { value: 6, label: '土' },
-                ].map(day => (
-                  <div key={day.value} className="flex flex-col gap-2 p-3 bg-gray-50 rounded-lg border border-gray-200">
-                    <label className="flex items-center gap-2">
-                      <input
-                        type="checkbox"
-                        checked={displayDaysOfWeek.includes(day.value)}
-                        onChange={() => toggleDayOfWeek(day.value)}
-                        className="w-5 h-5 text-green-600"
-                      />
-                      <span className="text-gray-700 font-semibold">{day.label}曜日</span>
-                    </label>
+              {[
+                { value: 0, label: '日' },
+                { value: 1, label: '月' },
+                { value: 2, label: '火' },
+                { value: 3, label: '水' },
+                { value: 4, label: '木' },
+                { value: 5, label: '金' },
+                { value: 6, label: '土' },
+              ].map(day => (
+                <div key={day.value} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                  <label className="flex items-center gap-2 min-w-fit">
+                    <input
+                      type="checkbox"
+                      checked={displayDaysOfWeek.includes(day.value)}
+                      onChange={() => toggleDayOfWeek(day.value)}
+                      className="w-5 h-5 text-green-600"
+                    />
+                    <span className="text-gray-700 font-semibold">{day.label}曜日</span>
+                  </label>
 
-                    {displayDaysOfWeek.includes(day.value) && (
-                      <div className="flex flex-col gap-2">
-                        <div>
-                          <label className="block text-xs font-semibold text-gray-600 mb-1">開始</label>
-                          <input
-                            type="time"
-                            value={clinicHours.find(h => h.dayOfWeek === day.value)?.startTime || '09:00'}
-                            onChange={(e) => updateClinicHour(day.value, 'startTime', e.target.value)}
-                            className="w-full px-2 py-1 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-xs font-semibold text-gray-600 mb-1">終了</label>
-                          <input
-                            type="time"
-                            value={clinicHours.find(h => h.dayOfWeek === day.value)?.endTime || '18:00'}
-                            onChange={(e) => updateClinicHour(day.value, 'endTime', e.target.value)}
-                            className="w-full px-2 py-1 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-                          />
-                        </div>
+                  {displayDaysOfWeek.includes(day.value) && (
+                    <div className="flex gap-3 flex-1">
+                      <div className="flex-1">
+                        <label className="block text-xs font-semibold text-gray-600 mb-1">診療開始時刻</label>
+                        <input
+                          type="time"
+                          value={clinicHours.find(h => h.dayOfWeek === day.value)?.startTime || '09:00'}
+                          onChange={(e) => updateClinicHour(day.value, 'startTime', e.target.value)}
+                          className="w-full px-2 py-1 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                        />
                       </div>
-                    )}
-                  </div>
-                ))}
-              </div>
+                      <div className="flex-1">
+                        <label className="block text-xs font-semibold text-gray-600 mb-1">診療終了時刻</label>
+                        <input
+                          type="time"
+                          value={clinicHours.find(h => h.dayOfWeek === day.value)?.endTime || '18:00'}
+                          onChange={(e) => updateClinicHour(day.value, 'endTime', e.target.value)}
+                          className="w-full px-2 py-1 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))}
             </div>
 
             <div className="flex gap-3">
