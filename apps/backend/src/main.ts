@@ -9,6 +9,15 @@ import { ConfigService } from '@nestjs/config';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  
+  // CORS 有効化
+  app.enableCors({
+    origin: '*', // 開発環境では全てのオリジンを許可
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+  });
+  
   // 全リクエストに対して DTO バリデーションを自動実行
   app.useGlobalPipes(
     new ValidationPipe({

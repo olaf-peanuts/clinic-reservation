@@ -2,12 +2,20 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
-  <link rel="icon" href="/favicon.ico" />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>保健室予約アプリ</title>
+  <title>診療予約システム</title>
 </head>
 <body class="bg-gray-100">
   <div id="root"></div>
   <script type="module" src="/src/main.tsx"></script>
+  <script>
+    window.addEventListener('error', (event) => {
+      console.error('Global error:', event.error);
+    });
+    window.addEventListener('unhandledrejection', (event) => {
+      console.error('Unhandled rejection:', event.reason);
+    });
+  </script>
 </body>
 </html>

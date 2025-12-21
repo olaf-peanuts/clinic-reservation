@@ -1,19 +1,20 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 export default defineConfig({
   plugins: [react()],
+  build: {
+    outDir: path.resolve(__dirname, 'dist'),
+    emptyOutDir: true,
+  },
   resolve: {
     alias: {
-      '@myorg/shared': path.resolve(__dirname, '../../libs/shared/src'),
-    },
-  },
-  server: {
-    port: 3000,
-    proxy: {
-      // API 呼び出しは同一ホストの /api/v1 にプロキシ
-      '/api': { target: 'http://localhost:3000', changeOrigin: true },
+      '@': path.resolve(__dirname, './src'),
+      '@shared': path.resolve(__dirname, '../shared'),
     },
   },
 });

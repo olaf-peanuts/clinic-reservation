@@ -6,6 +6,7 @@ import {
   MockEmployeeService,
   RealEmployeeService,
 } from './employee.service';
+import { PrismaService } from '../prisma/prisma.service';
 
 const employeeProvider: Provider = {
   provide: EMPLOYEE_SERVICE,
@@ -18,7 +19,7 @@ const employeeProvider: Provider = {
 
 @Module({
   controllers: [EmployeeController],
-  providers: [employeeProvider],
+  providers: [employeeProvider, PrismaService],
   exports: [employeeProvider],
 })
 export class EmployeeModule {}
