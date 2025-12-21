@@ -144,7 +144,7 @@ export default function Dashboard() {
   // カレンダー設定読み込み
   const loadCalendarSettings = async () => {
     try {
-      const res = await api.get('/api/config/calendar-settings').catch(() => ({ data: null }));
+      const res = await api.get('/config/calendar-settings').catch(() => ({ data: null }));
       if (res.data?.displayDaysOfWeek) {
         setDisplayDaysOfWeek(res.data.displayDaysOfWeek);
       }
@@ -156,7 +156,7 @@ export default function Dashboard() {
   // カレンダー設定保存
   const handleSaveCalendarSettings = async () => {
     try {
-      await api.put('/api/config/calendar-settings', { displayDaysOfWeek });
+      await api.put('/config/calendar-settings', { displayDaysOfWeek });
       setToast({ message: 'カレンダー設定を保存しました', type: 'success' });
     } catch (err) {
       console.error('Error saving calendar settings:', err);
