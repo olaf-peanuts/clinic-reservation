@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useSystemConfigStore } from '@/shared/stores/systemConfigStore';
 import ValidationErrorModal from './ValidationErrorModal';
 import { getAvailableTimezones } from '@/utils/datetime';
+import { api } from '@/api/client';
 
 export default function SystemConfigPanel() {
   const [showValidationError, setShowValidationError] = useState(false);
@@ -12,12 +13,17 @@ export default function SystemConfigPanel() {
   const [currentTimezone, setCurrentTimezone] = useState<string>('Asia/Tokyo');
   const [isTimezoneExpanded, setIsTimezoneExpanded] = useState(false);
   const [isDoctorTimeExpanded, setIsDoctorTimeExpanded] = useState(false);
+  const [isScreenSizeExpanded, setIsScreenSizeExpanded] = useState(false);
 
   // 医師設定のローカル状態
   const [minDurationMinutes, setMinDurationMinutes] = useState<string>('5');
   const [defaultDurationMinutes, setDefaultDurationMinutes] = useState<string>('30');
   const [maxDurationMinutes, setMaxDurationMinutes] = useState<string>('300');
   const [honorific, setHonorific] = useState<string>('医師');
+
+  // サイズ設定のローカル状態
+  const [minScreenWidth, setMinScreenWidth] = useState<string>('1024');
+  const [minScreenHeight, setMinScreenHeight] = useState<string>('768');
 
   // グローバルストア
   const {
@@ -32,7 +38,23 @@ export default function SystemConfigPanel() {
   // マウント時に設定を読み込む
   useEffect(() => {
     fetchAllSettings();
+    loadScreenSize();
   }, []);
+
+  // スクリーンサイズを読み込む
+  const loadScreenSize = async () => {
+    try {
+      const res = await api.get('/config/screen-size').catch(() => ({ data: null }));
+      if (res.data?.minScreenWidth !== undefined) {
+        setMinScreenWidth(res.data.minScreenWidth.toString());
+      }
+      if (res.data?.minScreenHeight !== undefined) {
+        setMinScreenHeight(res.data.minScreenHeight.toString());
+      }
+    } catch (err) {
+      console.error('Error loading screen size:', err);
+    }
+  };
 
   // ストアの値が更新されたらUIを同期
   useEffect(() => {
@@ -99,6 +121,33 @@ export default function SystemConfigPanel() {
     } catch (err) {
       console.error('Error updating doctor timing settings:', err);
       setValidationErrorMessage('医師設定の保存に失敗しました。');
+      setShowValidationError(true);
+    }
+  };
+
+  // スクリーンサイズを保存
+  const handleSaveScreenSize = async () => {
+    const width = parseInt(minScreenWidth) || 1024;
+    const height = parseInt(minScreenHeight) || 768;
+
+    if (width < 800) {
+      setValidationErrorMessage('幅は800px以上で入力してください。');
+      setShowValidationError(true);
+      return;
+    }
+    if (height < 600) {
+      setValidationErrorMessage('高さは600px以上で入力してください。');
+      setShowValidationError(true);
+      return;
+    }
+
+    try {
+      await api.put('/config/screen-size', { minScreenWidth: width, minScreenHeight: height });
+      setShowSuccessMessage(true);
+      setTimeout(() => setShowSuccessMessage(false), 3000);
+    } catch (err) {
+      console.error('Error saving screen size:', err);
+      setValidationErrorMessage('画面サイズ設定の保存に失敗しました。');
       setShowValidationError(true);
     }
   };
@@ -235,6 +284,68 @@ export default function SystemConfigPanel() {
                   　デフォルト: <span className="font-bold text-green-600">{config.doctorTiming.defaultDurationMinutes}分</span>
                   　最大: <span className="font-bold text-green-600">{config.doctorTiming.maxDurationMinutes}分</span>
                   　敬称: <span className="font-bold text-green-600">{config.doctorTiming.honorific}</span>
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* サイズ設定 */}
+        <div className="border rounded-lg overflow-hidden mt-6">
+          <button
+            onClick={() => setIsScreenSizeExpanded(!isScreenSizeExpanded)}
+            className="w-full flex items-center justify-between px-6 py-4 bg-gray-50 hover:bg-gray-100 transition-colors border-b border-gray-200"
+          >
+            <h3 className="text-lg font-semibold text-gray-800">サイズ設定</h3>
+            <span className="text-2xl text-gray-600 font-bold">
+              {isScreenSizeExpanded ? '−' : '+'}
+            </span>
+          </button>
+          {isScreenSizeExpanded && (
+            <div className="px-6 py-6 space-y-6 bg-white">
+              <p className="text-sm text-gray-600">
+                システムの最小画面サイズを設定します。
+              </p>
+
+              <div className="space-y-4">
+                <div className="max-w-xs">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    幅（ピクセル）
+                  </label>
+                  <input
+                    type="number"
+                    value={minScreenWidth}
+                    onChange={(e) => setMinScreenWidth(e.target.value)}
+                    min="800"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                  />
+                </div>
+
+                <div className="max-w-xs">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    高さ（ピクセル）
+                  </label>
+                  <input
+                    type="number"
+                    value={minScreenHeight}
+                    onChange={(e) => setMinScreenHeight(e.target.value)}
+                    min="600"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                  />
+                </div>
+              </div>
+
+              <button
+                onClick={handleSaveScreenSize}
+                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-semibold transition-colors"
+              >
+                保存
+              </button>
+
+              <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+                <p className="text-sm text-gray-700">
+                  幅: <span className="font-bold text-green-600">{minScreenWidth}px</span>
+                  　高さ: <span className="font-bold text-green-600">{minScreenHeight}px</span>
                 </p>
               </div>
             </div>

@@ -9,12 +9,18 @@ export interface ExaminationRoomsDto {
   numberOfRooms?: number;
 }
 
+export interface ScreenSizeDto {
+  minScreenWidth?: number;
+  minScreenHeight?: number;
+}
+
 @Injectable()
 export class ConfigService {
   // メモリ上での設定管理（本来はデータベース)
   private calendarSettings = { displayDaysOfWeek: [0, 1, 2, 3, 4, 5, 6] };
   private examinationRooms = { numberOfRooms: 1 };
   private doctorDefaultDuration = { defaultDurationMinutes: 30 };
+  private screenSize = { minScreenWidth: 1024, minScreenHeight: 768 };
 
   constructor(private readonly prisma: PrismaService) {}
 
@@ -49,5 +55,19 @@ export class ConfigService {
       this.doctorDefaultDuration.defaultDurationMinutes = dto.defaultDurationMinutes;
     }
     return this.doctorDefaultDuration;
+  }
+
+  getScreenSize() {
+    return this.screenSize;
+  }
+
+  updateScreenSize(dto: ScreenSizeDto) {
+    if (dto.minScreenWidth !== undefined) {
+      this.screenSize.minScreenWidth = dto.minScreenWidth;
+    }
+    if (dto.minScreenHeight !== undefined) {
+      this.screenSize.minScreenHeight = dto.minScreenHeight;
+    }
+    return this.screenSize;
   }
 }

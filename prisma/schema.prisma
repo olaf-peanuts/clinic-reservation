@@ -116,6 +116,15 @@ model UserTimezone {
   timezone String               // IANA タイムゾーン文字列例: "Asia/Tokyo"
 }
 
+// システム設定
+model SystemConfig {
+  id                    String @id @default(uuid())
+  minScreenWidth        Int    @default(1024)     // 画面最小幅（ピクセル）
+  minScreenHeight       Int    @default(768)      // 画面最小高さ（ピクセル）
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+}
+
 // 将来的に健康診断結果テーブル（現在は未利用）
 // model HealthCheckResult {
 //   id          String   @id @default(uuid())

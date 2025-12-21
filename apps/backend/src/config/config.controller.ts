@@ -9,6 +9,11 @@ export interface ExaminationRoomsDto {
   numberOfRooms?: number;
 }
 
+export interface ScreenSizeDto {
+  minScreenWidth?: number;
+  minScreenHeight?: number;
+}
+
 @Controller('config')
 export class ConfigController {
   constructor(private readonly configService: ConfigService) {}
@@ -41,5 +46,15 @@ export class ConfigController {
   @Put('doctor-default-duration')
   updateDoctorDefaultDuration(@Body() dto: { defaultDurationMinutes?: number }) {
     return this.configService.updateDoctorDefaultDuration(dto);
+  }
+
+  @Get('screen-size')
+  getScreenSize() {
+    return this.configService.getScreenSize();
+  }
+
+  @Put('screen-size')
+  updateScreenSize(@Body() dto: ScreenSizeDto) {
+    return this.configService.updateScreenSize(dto);
   }
 }
