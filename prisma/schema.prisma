@@ -53,10 +53,12 @@ model DoctorSchedule {
   id               String   @id @default(uuid())
   doctorId         Int
   doctor           Doctor   @relation(fields: [doctorId], references: [id], onDelete: Cascade)
-  startUtc         DateTime // 医師が診療できる開始時刻（UTC）
-  endUtc           DateTime // 医師が診療できる終了時刻（UTC）
+  date             String   // YYYY-MM-DD 形式
+  timePeriods      Json     // [{startTime: "HH:mm", endTime: "HH:mm"}, ...] 形式の JSON
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 
-  @@unique([doctorId, startUtc, endUtc]) // 同一医師の重複ブロック防止
+  @@unique([doctorId, date]) // 同一医師・同一日の重複ブロック防止
 }
 
 model Reservation {

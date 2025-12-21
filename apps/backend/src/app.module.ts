@@ -4,6 +4,7 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { PrismaService } from './prisma/prisma.service';
 import { HealthModule } from './health/health.module';
 import { DoctorModule } from './doctor/doctor.module';
+import { DoctorScheduleModule } from './doctor-schedule/doctor-schedule.module';
 import { ConfigurationModule } from './config/config.module';
 
 @Module({
@@ -12,6 +13,7 @@ import { ConfigurationModule } from './config/config.module';
     ScheduleModule.forRoot(),
     HealthModule,
     DoctorModule,
+    DoctorScheduleModule,
     ConfigurationModule,
   ],
   providers: [PrismaService],
