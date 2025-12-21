@@ -1,9 +1,8 @@
 import {
-  IsUUID,
   IsString,
   IsInt,
   Min,
-  Max,
+  IsOptional,
 } from 'class-validator';
 
 export class CreateDoctorDto {
@@ -11,17 +10,29 @@ export class CreateDoctorDto {
   name: string;
 
   @IsString()
-  title?: string;
+  @IsOptional()
+  email?: string;
+
+  @IsString()
+  @IsOptional()
+  azureObjectId?: string;
+
+  @IsString()
+  @IsOptional()
+  honorific?: string;
 
   @IsInt()
   @Min(1)
-  minDurationMin: number; // 分単位
+  @IsOptional()
+  minDurationMinutes?: number;
 
   @IsInt()
   @Min(1)
-  defaultDurationMin: number;
+  @IsOptional()
+  defaultDurationMinutes?: number;
 
   @IsInt()
   @Min(1)
-  maxDurationMin: number;
+  @IsOptional()
+  maxDurationMinutes?: number;
 }

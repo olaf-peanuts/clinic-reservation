@@ -7,29 +7,45 @@ export class DoctorService {
   constructor(private readonly prisma: PrismaService) {}
 
   async create(dto: CreateDoctorDto) {
-    // 従業員情報は別途作成済みと仮定（employeeId が外部キーになる）
-    // ここでは簡易的に employee を同時作成しない実装
-    return this.prisma.doctor.create({ data: dto as any });
+    return this.prisma.doctor.create({
+      data: {
+        name: dto.name,
+        email: dto.email || '',
+        azureObjectId: dto.azureObjectId || '',
+        honorific: dto.honorific || '医師',
+        minDurationMinutes: dto.minDurationMinutes || 5,
+        defaultDurationMinutes: dto.defaultDurationMinutes || 30,
+        maxDurationMinutes: dto.maxDurationMinutes || 300,
+      },
+    });
   }
 
   async findAll() {
-    return this.prisma.doctor.findMany({
-      include: { employee: true, schedules: true },
-    });
+    return this.prisma.doctor.findMany();
   }
 
-  async findOne(id: string) {
+  async findOne(id: number) {
     return this.prisma.doctor.findUnique({
       where: { id },
-      include: { employee: true, schedules: true },
     });
   }
 
-  async update(id: string, dto: Partial<CreateDoctorDto>) {
-    return this.prisma.doctor.update({ where: { id }, data: dto as any });
+  async update(id: number, dto: Partial<CreateDoctorDto>) {
+    return this.prisma.doctor.update({
+      where: { id },
+      data: {
+        name: dto.name,
+        email: dto.email,
+        azureObjectId: dto.azureObjectId,
+        honorific: dto.honorific,
+        minDurationMinutes: dto.minDurationMinutes,
+        defaultDurationMinutes: dto.defaultDurationMinutes,
+        maxDurationMinutes: dto.maxDurationMinutes,
+      },
+    });
   }
 
-  async remove(id: string) {
+  async remove(id: number) {
     return this.prisma.doctor.delete({ where: { id } });
   }
 }

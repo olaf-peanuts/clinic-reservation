@@ -19,21 +19,22 @@ model Employee {
   department    String?
   phoneNumber   String?   // "000-0000-0000" フォーマット（バリデーションはアプリ側で実装）
 
-  // 継承先テーブルとの 1‑対‑1 関係
-  doctor        Doctor?
   nurse         Nurse?
 
   reservations  Reservation[]   @relation("PatientReservations")
 }
 
 model Doctor {
-  id                 String   @id @default(uuid())
-  employeeId         String   @unique
-  employee           Employee @relation(fields: [employeeId], references: [id])
-  title              String?
-  minDurationMin     Int
-  defaultDurationMin Int
-  maxDurationMin     Int
+  id                      Int      @id @default(autoincrement())
+  name                    String
+  email                   String   @default("")
+  azureObjectId           String   @default("")
+  honorific               String   @default("医師")
+  minDurationMinutes      Int      @default(5)
+  defaultDurationMinutes  Int      @default(30)
+  maxDurationMinutes      Int      @default(300)
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
 
   schedules          DoctorSchedule[]
   reservations       Reservation[] @relation("DoctorReservations")
@@ -50,8 +51,8 @@ model Nurse {
 
 model DoctorSchedule {
   id               String   @id @default(uuid())
-  doctorId         String
-  doctor           Doctor   @relation(fields: [doctorId], references: [id])
+  doctorId         Int
+  doctor           Doctor   @relation(fields: [doctorId], references: [id], onDelete: Cascade)
   startUtc         DateTime // 医師が診療できる開始時刻（UTC）
   endUtc           DateTime // 医師が診療できる終了時刻（UTC）
 
@@ -60,15 +61,15 @@ model DoctorSchedule {
 
 model Reservation {
   id            String   @id @default(uuid())
-  doctorId      String
+  doctorId      Int
   employeeId    String
   nurseId       String?   // 必須ではない
   startUtc      DateTime
   endUtc        DateTime
 
-  doctor        Doctor   @relation("DoctorReservations", fields: [doctorId], references: [id])
-  employee      Employee @relation("PatientReservations", fields: [employeeId], references: [id])
-  nurse         Nurse?   @relation("NurseReservations", fields: [nurseId], references: [id])
+  doctor        Doctor   @relation("DoctorReservations", fields: [doctorId], references: [id], onDelete: Cascade)
+  employee      Employee @relation("PatientReservations", fields: [employeeId], references: [id], onDelete: Cascade)
+  nurse         Nurse?   @relation("NurseReservations", fields: [nurseId], references: [id], onDelete: SetNull)
   reminderSents ReminderSent[]
 
   // 将来的にステータス管理したいときのためのフィールド（現時点では未使用）
