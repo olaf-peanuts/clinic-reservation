@@ -1,6 +1,41 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+:root {
+  --min-screen-width: 1024px;
+  --min-screen-height: 768px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  width: 100%;
+  height: 100%;
+  min-width: var(--min-screen-width);
+  overflow: auto;
+}
+
+body {
+  width: 100%;
+  height: 100%;
+  min-width: var(--min-screen-width);
+  overflow: auto;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+#root {
+  width: 100%;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
 @keyframes fadeInOut {
   0% {
     opacity: 0;

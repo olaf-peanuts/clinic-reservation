@@ -203,9 +203,11 @@ export default function Dashboard() {
       const res = await api.get('/config/screen-size').catch(() => ({ data: null }));
       if (res.data?.minScreenWidth !== undefined) {
         setMinScreenWidth(res.data.minScreenWidth);
+        document.documentElement.style.setProperty('--min-screen-width', `${res.data.minScreenWidth}px`);
       }
       if (res.data?.minScreenHeight !== undefined) {
         setMinScreenHeight(res.data.minScreenHeight);
+        document.documentElement.style.setProperty('--min-screen-height', `${res.data.minScreenHeight}px`);
       }
     } catch (err) {
       console.error('Error loading screen size:', err);
@@ -220,6 +222,9 @@ export default function Dashboard() {
         return;
       }
       await api.put('/config/screen-size', { minScreenWidth, minScreenHeight });
+      // 保存後、CSS変数に適用
+      document.documentElement.style.setProperty('--min-screen-width', `${minScreenWidth}px`);
+      document.documentElement.style.setProperty('--min-screen-height', `${minScreenHeight}px`);
       setToast({ message: '画面最小サイズを保存しました', type: 'success' });
     } catch (err) {
       console.error('Error saving screen size:', err);

@@ -47,9 +47,11 @@ export default function SystemConfigPanel() {
       const res = await api.get('/config/screen-size').catch(() => ({ data: null }));
       if (res.data?.minScreenWidth !== undefined) {
         setMinScreenWidth(res.data.minScreenWidth.toString());
+        document.documentElement.style.setProperty('--min-screen-width', `${res.data.minScreenWidth}px`);
       }
       if (res.data?.minScreenHeight !== undefined) {
         setMinScreenHeight(res.data.minScreenHeight.toString());
+        document.documentElement.style.setProperty('--min-screen-height', `${res.data.minScreenHeight}px`);
       }
     } catch (err) {
       console.error('Error loading screen size:', err);
@@ -143,6 +145,9 @@ export default function SystemConfigPanel() {
 
     try {
       await api.put('/config/screen-size', { minScreenWidth: width, minScreenHeight: height });
+      // 保存後、CSS変数に適用
+      document.documentElement.style.setProperty('--min-screen-width', `${width}px`);
+      document.documentElement.style.setProperty('--min-screen-height', `${height}px`);
       setShowSuccessMessage(true);
       setTimeout(() => setShowSuccessMessage(false), 3000);
     } catch (err) {
