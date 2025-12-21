@@ -123,6 +123,12 @@ model SystemConfig {
   id                    String @id @default(uuid())
   minScreenWidth        Int    @default(1024)     // 画面最小幅（ピクセル）
   minScreenHeight       Int    @default(768)      // 画面最小高さ（ピクセル）
+  displayDaysOfWeek     Int[]  @default([0, 1, 2, 3, 4, 5, 6])  // カレンダーに表示する曜日
+  // 診療時間帯：曜日ごとの診療開始・終了時刻（JSON形式）
+  // [{dayOfWeek: 0, startTime: "09:00", endTime: "18:00"}, ...]
+  clinicHours           Json   @default("[]")
+  numberOfExaminationRooms Int  @default(1)     // 診察室の部屋数
+  doctorDefaultDurationMinutes Int @default(30) // 医師のデフォルト診察時間
   createdAt             DateTime @default(now())
   updatedAt             DateTime @updatedAt
 }

@@ -74,6 +74,15 @@ export default function Dashboard() {
   const [minScreenWidth, setMinScreenWidth] = useState<number>(1024);
   const [minScreenHeight, setMinScreenHeight] = useState<number>(768);
   const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [clinicHours, setClinicHours] = useState<Array<{ dayOfWeek: number; startTime: string; endTime: string }>>([
+    { dayOfWeek: 0, startTime: '09:00', endTime: '18:00' },
+    { dayOfWeek: 1, startTime: '09:00', endTime: '18:00' },
+    { dayOfWeek: 2, startTime: '09:00', endTime: '18:00' },
+    { dayOfWeek: 3, startTime: '09:00', endTime: '18:00' },
+    { dayOfWeek: 4, startTime: '09:00', endTime: '18:00' },
+    { dayOfWeek: 5, startTime: '09:00', endTime: '18:00' },
+    { dayOfWeek: 6, startTime: '09:00', endTime: '18:00' },
+  ]);
   const [showAddTemplateModal, setShowAddTemplateModal] = useState(false);
   const [newTemplate, setNewTemplate] = useState({
     name: '',
@@ -156,6 +165,9 @@ export default function Dashboard() {
       if (res.data?.displayDaysOfWeek) {
         setDisplayDaysOfWeek(res.data.displayDaysOfWeek);
       }
+      if (res.data?.clinicHours) {
+        setClinicHours(res.data.clinicHours);
+      }
     } catch (err) {
       console.error('Error loading calendar settings:', err);
     }
@@ -164,12 +176,21 @@ export default function Dashboard() {
   // カレンダー設定保存
   const handleSaveCalendarSettings = async () => {
     try {
-      await api.put('/config/calendar-settings', { displayDaysOfWeek });
-      setToast({ message: 'カレンダー設定を保存しました', type: 'success' });
+      await api.put('/config/calendar-settings', { displayDaysOfWeek, clinicHours });
+      setToast({ message: '診療カレンダー&診療時間帯設定を保存しました', type: 'success' });
     } catch (err) {
       console.error('Error saving calendar settings:', err);
-      setToast({ message: 'カレンダー設定の保存に失敗しました', type: 'error' });
+      setToast({ message: '診療カレンダー&診療時間帯設定の保存に失敗しました', type: 'error' });
     }
+  };
+
+  // 診療時間の更新
+  const updateClinicHour = (dayOfWeek: number, field: 'startTime' | 'endTime', value: string) => {
+    setClinicHours(prevHours =>
+      prevHours.map(hour =>
+        hour.dayOfWeek === dayOfWeek ? { ...hour, [field]: value } : hour
+      )
+    );
   };
 
   // 診察室の部屋数読み込み
@@ -693,15 +714,15 @@ export default function Dashboard() {
             </div>
           </AccordionSection>
 
-          {/* カレンダー設定 */}
+          {/* 診療カレンダー&診療時間帯設定 */}
           <AccordionSection
-            title="カレンダー設定"
+            title="診療カレンダー&診療時間帯設定"
             isExpanded={isCalendarSettingsExpanded}
             onToggle={() => setIsCalendarSettingsExpanded(!isCalendarSettingsExpanded)}
           >
-            <p className="text-gray-600">カレンダーに表示する曜日を選択してください。</p>
+            <p className="text-gray-600 mb-6">カレンダーに表示する曜日と、各曜日の診療時間を設定してください。</p>
 
-            <div className="space-y-3">
+            <div className="space-y-3 mb-6">
               <div className="grid grid-cols-2 gap-4">
                 {[
                   { value: 0, label: '日' },
@@ -712,15 +733,40 @@ export default function Dashboard() {
                   { value: 5, label: '金' },
                   { value: 6, label: '土' },
                 ].map(day => (
-                  <label key={day.value} className="flex items-center gap-3">
-                    <input
-                      type="checkbox"
-                      checked={displayDaysOfWeek.includes(day.value)}
-                      onChange={() => toggleDayOfWeek(day.value)}
-                      className="w-5 h-5 text-blue-600"
-                    />
-                    <span className="text-gray-700 font-semibold">{day.label}曜日</span>
-                  </label>
+                  <div key={day.value} className="flex flex-col gap-2 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                    <label className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={displayDaysOfWeek.includes(day.value)}
+                        onChange={() => toggleDayOfWeek(day.value)}
+                        className="w-5 h-5 text-green-600"
+                      />
+                      <span className="text-gray-700 font-semibold">{day.label}曜日</span>
+                    </label>
+
+                    {displayDaysOfWeek.includes(day.value) && (
+                      <div className="flex flex-col gap-2">
+                        <div>
+                          <label className="block text-xs font-semibold text-gray-600 mb-1">開始</label>
+                          <input
+                            type="time"
+                            value={clinicHours.find(h => h.dayOfWeek === day.value)?.startTime || '09:00'}
+                            onChange={(e) => updateClinicHour(day.value, 'startTime', e.target.value)}
+                            className="w-full px-2 py-1 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-semibold text-gray-600 mb-1">終了</label>
+                          <input
+                            type="time"
+                            value={clinicHours.find(h => h.dayOfWeek === day.value)?.endTime || '18:00'}
+                            onChange={(e) => updateClinicHour(day.value, 'endTime', e.target.value)}
+                            className="w-full px-2 py-1 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 ))}
               </div>
             </div>

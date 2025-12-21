@@ -1,8 +1,15 @@
 import { Controller, Get, Put, Body } from '@nestjs/common';
 import { ConfigService } from './config.service';
 
+export interface ClinicHour {
+  dayOfWeek: number;
+  startTime: string;
+  endTime: string;
+}
+
 export interface CalendarSettingsDto {
   displayDaysOfWeek?: number[];
+  clinicHours?: ClinicHour[];
 }
 
 export interface ExaminationRoomsDto {

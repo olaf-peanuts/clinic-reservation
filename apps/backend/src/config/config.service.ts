@@ -1,8 +1,15 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 
+export interface ClinicHour {
+  dayOfWeek: number;
+  startTime: string;
+  endTime: string;
+}
+
 export interface CalendarSettingsDto {
   displayDaysOfWeek?: number[];
+  clinicHours?: ClinicHour[];
 }
 
 export interface ExaminationRoomsDto {
@@ -16,58 +23,108 @@ export interface ScreenSizeDto {
 
 @Injectable()
 export class ConfigService {
-  // メモリ上での設定管理（本来はデータベース)
-  private calendarSettings = { displayDaysOfWeek: [0, 1, 2, 3, 4, 5, 6] };
-  private examinationRooms = { numberOfRooms: 1 };
-  private doctorDefaultDuration = { defaultDurationMinutes: 30 };
-  private screenSize = { minScreenWidth: 1024, minScreenHeight: 768 };
-
   constructor(private readonly prisma: PrismaService) {}
 
-  getCalendarSettings() {
-    return this.calendarSettings;
-  }
-
-  updateCalendarSettings(dto: CalendarSettingsDto) {
-    if (dto.displayDaysOfWeek !== undefined) {
-      this.calendarSettings.displayDaysOfWeek = dto.displayDaysOfWeek;
+  private async getOrCreateConfig() {
+    let config = await this.prisma.systemConfig.findFirst();
+    if (!config) {
+      config = await this.prisma.systemConfig.create({
+        data: {
+          displayDaysOfWeek: [0, 1, 2, 3, 4, 5, 6],
+          clinicHours: [
+            { dayOfWeek: 0, startTime: '09:00', endTime: '18:00' },
+            { dayOfWeek: 1, startTime: '09:00', endTime: '18:00' },
+            { dayOfWeek: 2, startTime: '09:00', endTime: '18:00' },
+            { dayOfWeek: 3, startTime: '09:00', endTime: '18:00' },
+            { dayOfWeek: 4, startTime: '09:00', endTime: '18:00' },
+            { dayOfWeek: 5, startTime: '09:00', endTime: '18:00' },
+            { dayOfWeek: 6, startTime: '09:00', endTime: '18:00' },
+          ],
+          numberOfExaminationRooms: 1,
+          doctorDefaultDurationMinutes: 30,
+          minScreenWidth: 1024,
+          minScreenHeight: 768,
+        },
+      });
     }
-    return this.calendarSettings;
+    return config;
   }
 
-  getExaminationRooms() {
-    return this.examinationRooms;
+  async getCalendarSettings() {
+    const config = await this.getOrCreateConfig();
+    return {
+      displayDaysOfWeek: config.displayDaysOfWeek,
+      clinicHours: config.clinicHours as ClinicHour[],
+    };
   }
 
-  updateExaminationRooms(dto: ExaminationRoomsDto) {
-    if (dto.numberOfRooms !== undefined) {
-      this.examinationRooms.numberOfRooms = dto.numberOfRooms;
-    }
-    return this.examinationRooms;
+  async updateCalendarSettings(dto: CalendarSettingsDto) {
+    const config = await this.getOrCreateConfig();
+    const updatedConfig = await this.prisma.systemConfig.update({
+      where: { id: config.id },
+      data: {
+        ...(dto.displayDaysOfWeek !== undefined && { displayDaysOfWeek: dto.displayDaysOfWeek }),
+        ...(dto.clinicHours !== undefined && { clinicHours: dto.clinicHours }),
+      },
+    });
+    return {
+      displayDaysOfWeek: updatedConfig.displayDaysOfWeek,
+      clinicHours: updatedConfig.clinicHours as ClinicHour[],
+    };
   }
 
-  getDoctorDefaultDuration() {
-    return this.doctorDefaultDuration;
+  async getExaminationRooms() {
+    const config = await this.getOrCreateConfig();
+    return { numberOfRooms: config.numberOfExaminationRooms };
   }
 
-  updateDoctorDefaultDuration(dto: { defaultDurationMinutes?: number }) {
-    if (dto.defaultDurationMinutes !== undefined) {
-      this.doctorDefaultDuration.defaultDurationMinutes = dto.defaultDurationMinutes;
-    }
-    return this.doctorDefaultDuration;
+  async updateExaminationRooms(dto: ExaminationRoomsDto) {
+    const config = await this.getOrCreateConfig();
+    const updatedConfig = await this.prisma.systemConfig.update({
+      where: { id: config.id },
+      data: {
+        ...(dto.numberOfRooms !== undefined && { numberOfExaminationRooms: dto.numberOfRooms }),
+      },
+    });
+    return { numberOfRooms: updatedConfig.numberOfExaminationRooms };
   }
 
-  getScreenSize() {
-    return this.screenSize;
+  async getDoctorDefaultDuration() {
+    const config = await this.getOrCreateConfig();
+    return { defaultDurationMinutes: config.doctorDefaultDurationMinutes };
   }
 
-  updateScreenSize(dto: ScreenSizeDto) {
-    if (dto.minScreenWidth !== undefined) {
-      this.screenSize.minScreenWidth = dto.minScreenWidth;
-    }
-    if (dto.minScreenHeight !== undefined) {
-      this.screenSize.minScreenHeight = dto.minScreenHeight;
-    }
-    return this.screenSize;
+  async updateDoctorDefaultDuration(dto: { defaultDurationMinutes?: number }) {
+    const config = await this.getOrCreateConfig();
+    const updatedConfig = await this.prisma.systemConfig.update({
+      where: { id: config.id },
+      data: {
+        ...(dto.defaultDurationMinutes !== undefined && { doctorDefaultDurationMinutes: dto.defaultDurationMinutes }),
+      },
+    });
+    return { defaultDurationMinutes: updatedConfig.doctorDefaultDurationMinutes };
+  }
+
+  async getScreenSize() {
+    const config = await this.getOrCreateConfig();
+    return {
+      minScreenWidth: config.minScreenWidth,
+      minScreenHeight: config.minScreenHeight,
+    };
+  }
+
+  async updateScreenSize(dto: ScreenSizeDto) {
+    const config = await this.getOrCreateConfig();
+    const updatedConfig = await this.prisma.systemConfig.update({
+      where: { id: config.id },
+      data: {
+        ...(dto.minScreenWidth !== undefined && { minScreenWidth: dto.minScreenWidth }),
+        ...(dto.minScreenHeight !== undefined && { minScreenHeight: dto.minScreenHeight }),
+      },
+    });
+    return {
+      minScreenWidth: updatedConfig.minScreenWidth,
+      minScreenHeight: updatedConfig.minScreenHeight,
+    };
   }
 }
