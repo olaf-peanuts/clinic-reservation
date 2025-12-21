@@ -352,69 +352,6 @@ export default function TodayScheduleCalendar({ viewMode: propViewMode = 'day', 
         <div className="flex-1"></div>
       </div>
 
-      {/* 診療予約作成ボタン */}
-      <div className="p-4 border-b border-gray-200 flex justify-end">
-        <button
-          onClick={() => {
-            // 医師のスケジュールをチェック
-            let hasSchedule = false;
-            
-            if (doctors.length === 1) {
-              // 医師が1人の場合、その医師のスケジュールをチェック
-              const doctorSchedules = schedules.filter(s => s.doctorId === doctors[0].id);
-              hasSchedule = doctorSchedules.length > 0;
-              
-              if (!hasSchedule) {
-                setErrorMessage('選択された医師のスケジュールが設定されていません。スケジュール登録後にご利用ください。');
-                setShowErrorDialog(true);
-                return;
-              }
-              
-              setReservationForm({
-                doctorId: doctors[0].id.toString(),
-                employeeId: '',
-                employeeName: '',
-                employeeEmail: '',
-                employeeCompany: '',
-                employeeDepartment: '',
-                reservationContent: '',
-                startTime: '09:00',
-                endTime: '10:00',
-              });
-            } else {
-              // 医師が2人以上の場合、少なくとも1人の医師がスケジュールを持っているかチェック
-              hasSchedule = doctors.some(doctor => {
-                const doctorSchedules = schedules.filter(s => s.doctorId === doctor.id);
-                return doctorSchedules.length > 0;
-              });
-              
-              if (!hasSchedule) {
-                setErrorMessage('いずれかの医師のスケジュールが設定されていません。スケジュール登録後にご利用ください。');
-                setShowErrorDialog(true);
-                return;
-              }
-              
-              setReservationForm({
-                doctorId: '',
-                employeeId: '',
-                employeeName: '',
-                employeeEmail: '',
-                employeeCompany: '',
-                employeeDepartment: '',
-                reservationContent: '',
-                startTime: '09:00',
-                endTime: '10:00',
-              });
-            }
-            
-            setShowReservationModal(true);
-          }}
-          className="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded font-medium transition-colors text-sm"
-        >
-          診療予約を作成
-        </button>
-      </div>
-
       {/* コンテンツ */}
       <div className="p-4">
         {loading && (
