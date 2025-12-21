@@ -64,6 +64,12 @@ interface Doctor {
   defaultDurationMinutes?: number;
 }
 
+interface ClinicHour {
+  dayOfWeek: number;
+  startTime: string;
+  endTime: string;
+}
+
 interface TodayScheduleCalendarProps {
   viewMode?: 'day' | 'week' | 'month';
   onNavigationChange?: (date: Date) => void;
@@ -71,11 +77,33 @@ interface TodayScheduleCalendarProps {
   onDateChange?: (date: Date) => void;
   numberOfRooms?: number;
 }
-
-const generateTimeSlots = (): TimeSlot[] => {
+const generateTimeSlots = (clinicHours?: ClinicHour[], dayOfWeek?: number, displayDaysOfWeek?: number[]): TimeSlot[] => {
   const slots: TimeSlot[] = [];
-  for (let hour = 8; hour <= 18; hour++) {
+  
+  // displayDaysOfWeekに曜日が含まれていない場合は空配列を返す
+  if (displayDaysOfWeek && dayOfWeek !== undefined && !displayDaysOfWeek.includes(dayOfWeek)) {
+    console.log(`[generateTimeSlots] dayOfWeek ${dayOfWeek} not in displayDaysOfWeek:`, displayDaysOfWeek);
+    return [];
+  }
+  
+  // 診療時間帯設定があり、その曜日の営業情報がある場合
+  let startHour = 8;
+  let endHour = 18;
+  
+  if (clinicHours && dayOfWeek !== undefined) {
+    const daySchedule = clinicHours.find(h => h.dayOfWeek === dayOfWeek);
+    if (daySchedule) {
+      const [startH, startM] = daySchedule.startTime.split(':').map(Number);
+      const [endH, endMin] = daySchedule.endTime.split(':').map(Number);
+      startHour = startH;
+      endHour = endH;
+    }
+  }
+  
+  for (let hour = startHour; hour <= endHour; hour++) {
     for (let minute = 0; minute < 60; minute += 5) {
+      // 終了時間を超えないようにする
+      if (hour === endHour && minute > 0) break;
       slots.push({
         time: `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`,
         hour,
@@ -83,9 +111,9 @@ const generateTimeSlots = (): TimeSlot[] => {
       });
     }
   }
+  console.log(`[generateTimeSlots] Generated ${slots.length} slots for dayOfWeek ${dayOfWeek}`);
   return slots;
 };
-
 export default function TodayScheduleCalendar({ viewMode: propViewMode = 'day', initialDate, onDateChange, numberOfRooms }: TodayScheduleCalendarProps = {}) {
   const [doctors, setDoctors] = useState<Doctor[]>([]);
   const [schedules, setSchedules] = useState<DoctorSchedule[]>([]);
@@ -93,7 +121,14 @@ export default function TodayScheduleCalendar({ viewMode: propViewMode = 'day', 
   const [error, setError] = useState<string | null>(null);
   const [viewMode] = useState<'day' | 'week' | 'month'>(propViewMode);
   const [selectedDate, setSelectedDate] = useState<Date>(initialDate || new Date());
-  const timeSlots = generateTimeSlots();
+  const [clinicHours, setClinicHours] = useState<ClinicHour[]>([]);
+  const [displayDaysOfWeek, setDisplayDaysOfWeek] = useState<number[]>([0, 1, 2, 3, 4, 5, 6]);
+  
+  // 現在の曜日に応じた時間スロットを生成
+  const dayOfWeek = selectedDate.getDay();
+  const timeSlots = generateTimeSlots(clinicHours, dayOfWeek, displayDaysOfWeek);
+  console.log(`[TodayScheduleCalendar] dayOfWeek: ${dayOfWeek}, displayDaysOfWeek: ${displayDaysOfWeek}, timeSlots.length: ${timeSlots.length}`);
+
 
   // 診療予約モーダルの状態
   const [showReservationModal, setShowReservationModal] = useState(false);
@@ -168,6 +203,27 @@ export default function TodayScheduleCalendar({ viewMode: propViewMode = 'day', 
     setSelectedDate(newDate);
     onDateChange?.(newDate);
   };
+
+  // 診療時間帯設定を読み込む
+  useEffect(() => {
+    const loadClinicHours = async () => {
+      try {
+        const res = await api.get('/config/calendar-settings').catch(() => ({ data: null }));
+        console.log('[TodayScheduleCalendar] API Response:', res.data);
+        if (res.data?.clinicHours) {
+          setClinicHours(res.data.clinicHours);
+          console.log('[TodayScheduleCalendar] Set clinic hours:', res.data.clinicHours);
+        }
+        if (res.data?.displayDaysOfWeek) {
+          setDisplayDaysOfWeek(res.data.displayDaysOfWeek);
+          console.log('[TodayScheduleCalendar] Set displayDaysOfWeek:', res.data.displayDaysOfWeek);
+        }
+      } catch (err) {
+        console.error('Error loading clinic hours:', err);
+      }
+    };
+    loadClinicHours();
+  }, []);
 
   // initialDateが変更されたときにselectedDateを更新
   useEffect(() => {
@@ -366,62 +422,85 @@ export default function TodayScheduleCalendar({ viewMode: propViewMode = 'day', 
           <div>
             {/* Day View */}
             {viewMode === 'day' && (
-              <div className="overflow-x-auto">
-                <div className="inline-block w-full min-w-max">
-                  <div className="flex border-b border-gray-300 bg-gray-50">
-                    <div className="w-16 flex-shrink-0 border-r border-gray-200 p-2">
-                      <p className="text-xs font-semibold text-gray-600">時刻</p>
-                    </div>
-                    {doctorsList.map(doctor => {
-                      const schedule = schedules.find(s => s.doctorId === doctor.id);
-                      const honorific = schedule?.doctor.honorific || '医師';
-                      return (
-                        <div key={doctor.id} className="flex-1 min-w-[140px] border-r border-gray-200 p-2 text-center">
-                          <p className="text-xs font-semibold text-gray-700">{doctor.name} {honorific}</p>
-                        </div>
-                      );
-                    })}
+              <>
+                {!displayDaysOfWeek.includes(dayOfWeek) ? (
+                  <div className="mb-4 p-4 bg-yellow-100 border border-yellow-400 rounded-lg text-yellow-800">
+                    <p className="text-sm font-semibold">本日は休診日です</p>
                   </div>
-
-                  {timeSlots.map((slot) => (
-                    <div key={slot.time} className="flex border-b border-gray-200 hover:bg-gray-50">
-                      <div className="w-16 flex-shrink-0 border-r border-gray-200 bg-gray-50 p-2">
-                        <p className="text-xs font-semibold text-gray-600">{slot.time}</p>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <div className="inline-block w-full min-w-max">
+                      <div className="flex border-b border-gray-300 bg-gray-50">
+                        <div className="w-16 flex-shrink-0 border-r border-gray-200 p-2">
+                          <p className="text-xs font-semibold text-gray-600">時刻</p>
+                        </div>
+                        {doctorsList.map(doctor => {
+                          const schedule = schedules.find(s => s.doctorId === doctor.id);
+                          const honorific = schedule?.doctor.honorific || '医師';
+                          return (
+                            <div key={doctor.id} className="flex-1 min-w-[140px] border-r border-gray-200 p-2 text-center">
+                              <p className="text-xs font-semibold text-gray-700">{doctor.name} {honorific}</p>
+                            </div>
+                          );
+                        })}
                       </div>
-                      {doctorsList.map(doctor => {
-                        const doctorSchedule = schedules.find(s => s.doctorId === doctor.id);
-                        const isAvailable = doctorSchedule?.timePeriods.some(
-                          tp => slot.time >= tp.startTime && slot.time < tp.endTime
-                        ) || false;
-
-                        // このスロットに予約があるか確認
-                        const appointmentsInSlot = doctorSchedule?.appointments?.filter(apt => {
-                          const aptDate = new Date(apt.startAt);
-                          const aptHours = String(aptDate.getUTCHours()).padStart(2, '0');
-                          const aptMinutes = String(aptDate.getUTCMinutes()).padStart(2, '0');
-                          const aptTime = `${aptHours}:${aptMinutes}`;
-                          console.log(`[Appointment Debug] Comparing ${aptTime} with slot ${slot.time}, appointment: ${apt.employee.name}`);
-                          return aptTime === slot.time;
-                        }) || [];
+                      {timeSlots.map((slot) => {
+                        // 営業時間外かどうかを判定
+                        const isWithinOperatingHours = (() => {
+                          if (!displayDaysOfWeek.includes(dayOfWeek)) return false; // 休診日
+                          const daySchedule = clinicHours.find(h => h.dayOfWeek === dayOfWeek);
+                          if (!daySchedule) return false;
+                          
+                          // startTime と endTime を "HH:mm" 形式で比較
+                          return slot.time >= daySchedule.startTime && slot.time < daySchedule.endTime;
+                        })();
 
                         return (
-                          <div key={`${doctor.id}-${slot.time}`} className="flex-1 min-w-[140px] border-r border-gray-200 p-1">
-                            {appointmentsInSlot.length > 0 ? (
-                              <div className="h-8 bg-blue-100 border border-blue-400 rounded text-xs flex items-center justify-center text-blue-900 font-semibold overflow-hidden">
-                                {appointmentsInSlot[0].employee.name.substring(0, 4)}
-                              </div>
-                            ) : isAvailable ? (
-                              <div className="h-8 bg-green-100 border border-green-400 rounded text-xs flex items-center justify-center text-green-900 font-semibold hover:bg-green-200 cursor-pointer">
-                                ○
-                              </div>
-                            ) : null}
+                          <div key={slot.time} className={`flex border-b border-gray-200 ${isWithinOperatingHours ? 'hover:bg-gray-50' : 'bg-gray-100'}`}>
+                            <div className={`w-16 flex-shrink-0 border-r border-gray-200 p-2 ${isWithinOperatingHours ? 'bg-gray-50' : 'bg-gray-200'}`}>
+                              <p className={`text-xs font-semibold ${isWithinOperatingHours ? 'text-gray-600' : 'text-gray-400'}`}>{slot.time}</p>
+                            </div>
+                            {doctorsList.map(doctor => {
+                              const doctorSchedule = schedules.find(s => s.doctorId === doctor.id);
+                              const isAvailable = isWithinOperatingHours && doctorSchedule?.timePeriods.some(
+                                tp => slot.time >= tp.startTime && slot.time < tp.endTime
+                              ) || false;
+
+                              // このスロットに予約があるか確認
+                              const appointmentsInSlot = doctorSchedule?.appointments?.filter(apt => {
+                                const aptDate = new Date(apt.startAt);
+                                const aptHours = String(aptDate.getUTCHours()).padStart(2, '0');
+                                const aptMinutes = String(aptDate.getUTCMinutes()).padStart(2, '0');
+                                const aptTime = `${aptHours}:${aptMinutes}`;
+                                console.log(`[Appointment Debug] Comparing ${aptTime} with slot ${slot.time}, appointment: ${apt.employee.name}`);
+                                return aptTime === slot.time;
+                              }) || [];
+
+                              return (
+                                <div key={`${doctor.id}-${slot.time}`} className={`flex-1 min-w-[140px] border-r border-gray-200 p-1 ${isWithinOperatingHours ? '' : 'bg-gray-100'}`}>
+                                  {appointmentsInSlot.length > 0 ? (
+                                    <div className="h-8 bg-blue-100 border border-blue-400 rounded text-xs flex items-center justify-center text-blue-900 font-semibold overflow-hidden">
+                                      {appointmentsInSlot[0].employee.name.substring(0, 4)}
+                                    </div>
+                                  ) : isAvailable ? (
+                                    <div className="h-8 bg-green-100 border border-green-400 rounded text-xs flex items-center justify-center text-green-900 font-semibold hover:bg-green-200 cursor-pointer">
+                                      ○
+                                    </div>
+                                  ) : !isWithinOperatingHours ? (
+                                    <div className="h-8 bg-gray-200 rounded text-xs flex items-center justify-center text-gray-400 font-semibold">
+                                      -
+                                    </div>
+                                  ) : null}
+                                </div>
+                              );
+                            })}
                           </div>
                         );
                       })}
                     </div>
-                  ))}
-                </div>
-              </div>
+                  </div>
+                )}
+              </>
             )}
 
             {/* Week View */}
@@ -432,12 +511,23 @@ export default function TodayScheduleCalendar({ viewMode: propViewMode = 'day', 
                   weekDate.setDate(weekDate.getDate() - weekDate.getDay() + i);
                   const dateStr = formatDate(weekDate);
                   const weekSchedules = schedules.filter(s => s.date === dateStr);
+                  const dayOfWeekForDate = weekDate.getDay();
+                  const isOperatingDay = displayDaysOfWeek.includes(dayOfWeekForDate);
+                  const daySchedule = clinicHours.find(h => h.dayOfWeek === dayOfWeekForDate);
 
                   return (
-                    <div key={i} className="border border-gray-300 rounded p-2 bg-gray-50">
+                    <div key={i} className={`border border-gray-300 rounded p-2 ${isOperatingDay ? 'bg-gray-50' : 'bg-gray-200'}`}>
                       <p className="text-xs font-semibold text-gray-700 text-center mb-2">
                         {weekDate.toLocaleDateString('ja-JP', { weekday: 'short', month: '2-digit', day: '2-digit' })}
                       </p>
+                      {isOperatingDay && daySchedule && (
+                        <p className="text-xs text-gray-600 text-center mb-2 font-semibold">
+                          {daySchedule.startTime} - {daySchedule.endTime}
+                        </p>
+                      )}
+                      {!isOperatingDay && (
+                        <p className="text-xs text-gray-500 text-center mb-2 font-semibold">休診</p>
+                      )}
                       <div className="space-y-1">
                         {weekSchedules.length > 0 ? (
                           weekSchedules.map(schedule => (
@@ -470,12 +560,27 @@ export default function TodayScheduleCalendar({ viewMode: propViewMode = 'day', 
                   const dateStr = formatDate(monthDate);
                   const monthSchedules = schedules.filter(s => s.date === dateStr);
                   const isCurrentMonth = monthDate.getMonth() === selectedDate.getMonth();
+                  const dayOfWeekForDate = monthDate.getDay();
+                  const isOperatingDay = displayDaysOfWeek.includes(dayOfWeekForDate);
+                  const daySchedule = clinicHours.find(h => h.dayOfWeek === dayOfWeekForDate);
 
                   return (
-                    <div key={i} className={`border border-gray-200 rounded p-1 min-h-[80px] ${isCurrentMonth ? 'bg-white' : 'bg-gray-50'}`}>
+                    <div key={i} className={`border border-gray-200 rounded p-1 min-h-[80px] ${isCurrentMonth ? (isOperatingDay ? 'bg-white' : 'bg-gray-100') : 'bg-gray-50'}`}>
                       <p className={`text-xs font-semibold ${isCurrentMonth ? 'text-gray-900' : 'text-gray-400'}`}>
                         {monthDate.getDate()}
                       </p>
+                      {isCurrentMonth && (
+                        <>
+                          {isOperatingDay && daySchedule && (
+                            <p className="text-xs text-gray-600 mt-1 font-semibold">
+                              {daySchedule.startTime}
+                            </p>
+                          )}
+                          {!isOperatingDay && (
+                            <p className="text-xs text-gray-400 mt-1 font-semibold">休</p>
+                          )}
+                        </>
+                      )}
                       {monthSchedules.length > 0 && (
                         <p className="text-xs text-green-700 font-semibold mt-1">
                           {monthSchedules.length} 件
