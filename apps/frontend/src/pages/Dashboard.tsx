@@ -66,13 +66,10 @@ export default function Dashboard() {
   const [isDoctorExpanded, setIsDoctorExpanded] = useState(false);
   const [isCalendarSettingsExpanded, setIsCalendarSettingsExpanded] = useState(false);
   const [isExaminationRoomsExpanded, setIsExaminationRoomsExpanded] = useState(false);
-  const [isScreenSizeExpanded, setIsScreenSizeExpanded] = useState(false);
   const [isTemplateExpanded, setIsTemplateExpanded] = useState(false);
   const [displayDaysOfWeek, setDisplayDaysOfWeek] = useState<number[]>([0, 1, 2, 3, 4, 5, 6]);
   const [systemDefaultDuration, setSystemDefaultDuration] = useState<number | string>(30);
   const [numberOfRooms, setNumberOfRooms] = useState<number>(1);
-  const [minScreenWidth, setMinScreenWidth] = useState<number>(1024);
-  const [minScreenHeight, setMinScreenHeight] = useState<number>(768);
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [clinicHours, setClinicHours] = useState<Array<{ dayOfWeek: number; startTime: string; endTime: string }>>([
     { dayOfWeek: 0, startTime: '09:00', endTime: '18:00' },
@@ -124,7 +121,6 @@ export default function Dashboard() {
         // 他の設定をロード
         await loadCalendarSettings();
         await loadExaminationRooms();
-        await loadScreenSize();
       } catch (err) {
         setError((err as Error).message);
         console.error('API error:', err);
@@ -215,41 +211,6 @@ export default function Dashboard() {
     } catch (err) {
       console.error('Error saving examination rooms:', err);
       setToast({ message: '診察室の部屋数の保存に失敗しました', type: 'error' });
-    }
-  };
-
-  // 画面最小サイズ読み込み
-  const loadScreenSize = async () => {
-    try {
-      const res = await api.get('/config/screen-size').catch(() => ({ data: null }));
-      if (res.data?.minScreenWidth !== undefined) {
-        setMinScreenWidth(res.data.minScreenWidth);
-        document.documentElement.style.setProperty('--min-screen-width', `${res.data.minScreenWidth}px`);
-      }
-      if (res.data?.minScreenHeight !== undefined) {
-        setMinScreenHeight(res.data.minScreenHeight);
-        document.documentElement.style.setProperty('--min-screen-height', `${res.data.minScreenHeight}px`);
-      }
-    } catch (err) {
-      console.error('Error loading screen size:', err);
-    }
-  };
-
-  // 画面最小サイズ保存
-  const handleSaveScreenSize = async () => {
-    try {
-      if (minScreenWidth < 800 || minScreenHeight < 600) {
-        setToast({ message: '最小幅は800px以上、最小高さは600px以上である必要があります', type: 'error' });
-        return;
-      }
-      await api.put('/config/screen-size', { minScreenWidth, minScreenHeight });
-      // 保存後、CSS変数に適用
-      document.documentElement.style.setProperty('--min-screen-width', `${minScreenWidth}px`);
-      document.documentElement.style.setProperty('--min-screen-height', `${minScreenHeight}px`);
-      setToast({ message: '画面最小サイズを保存しました', type: 'success' });
-    } catch (err) {
-      console.error('Error saving screen size:', err);
-      setToast({ message: '画面最小サイズの保存に失敗しました', type: 'error' });
     }
   };
 
@@ -672,47 +633,6 @@ export default function Dashboard() {
             onToggle={() => setIsDoctorExpanded(!isDoctorExpanded)}
             systemDefaultDuration={systemDefaultDuration}
           />
-
-          {/* 画面最小サイズの設定 */}
-          <AccordionSection
-            title="サイズ設定"
-            isExpanded={isScreenSizeExpanded}
-            onToggle={() => setIsScreenSizeExpanded(!isScreenSizeExpanded)}
-          >
-            <p className="text-gray-600 mb-4">システムの最小画面サイズを設定してください。</p>
-            
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">幅（ピクセル）</label>
-                <input
-                  type="number"
-                  min="800"
-                  value={minScreenWidth}
-                  onChange={(e) => setMinScreenWidth(Math.max(800, parseInt(e.target.value) || 800))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">高さ（ピクセル）</label>
-                <input
-                  type="number"
-                  min="600"
-                  value={minScreenHeight}
-                  onChange={(e) => setMinScreenHeight(Math.max(600, parseInt(e.target.value) || 600))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-                />
-              </div>
-            </div>
-
-            <div className="flex gap-3">
-              <button
-                onClick={handleSaveScreenSize}
-                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-semibold"
-              >
-                設定を保存
-              </button>
-            </div>
-          </AccordionSection>
 
           {/* 診療カレンダー&診療時間帯設定 */}
           <AccordionSection
