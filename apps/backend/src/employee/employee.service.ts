@@ -1,13 +1,11 @@
 import {
   Injectable,
   NotFoundException,
-  Inject,
 } from '@nestjs/common';
 import { EmployeeInfoProvider, EmployeeDto } from './employee.types';
 import { MockDataLoader } from '@myorg/shared/utils/mock-data.loader';
 
-// 本番実装は Azure AD Graph API を呼び出す想定（ここではモックだけ実装）
-@Injectable()
+export const EMPLOYEE_SERVICE = 'EMPLOYEE_SERVICE';
 export class RealEmployeeService implements EmployeeInfoProvider {
   async getByNumber(employeeNumber: string): Promise<EmployeeDto> {
     // TODO: Microsoft Graph の /users?$filter=employeeId eq '{employeeNumber}' 呼び出し

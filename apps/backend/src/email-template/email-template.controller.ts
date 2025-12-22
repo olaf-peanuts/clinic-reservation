@@ -2,6 +2,7 @@ import {
   Controller,
   Get,
   Post,
+  Put,
   Patch,
   Delete,
   Param,
@@ -10,13 +11,19 @@ import {
 import { EmailTemplateService } from './email-template.service';
 import { CreateEmailTemplateDto } from './email-template.dto';
 
-@Controller('email-templates')
+@Controller('templates')
 export class EmailTemplateController {
   constructor(private readonly service: EmailTemplateService) {}
 
   @Post()
-  create(@Body() dto: CreateEmailTemplateDto) {
-    return this.service.create(dto);
+  async create(@Body() dto: CreateEmailTemplateDto) {
+    const result = await this.service.create(dto);
+    return {
+      id: result.id,
+      name: result.name,
+      subject: result.subject,
+      bodyHtml: result.body,
+    };
   }
 
   @Get()
@@ -26,16 +33,23 @@ export class EmailTemplateController {
 
   @Get(':id')
   findOne(@Param('id') id: string) {
-    return this.service.findOne(id);
+    return this.service.findOne(parseInt(id));
+  }
+
+  @Put(':id')
+  async update(@Param('id') id: string, @Body() dto: Partial<CreateEmailTemplateDto>) {
+    const result = await this.service.update(parseInt(id), dto);
+    return result;
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() dto: Partial<CreateEmailTemplateDto>) {
-    return this.service.update(id, dto);
+  async patch(@Param('id') id: string, @Body() dto: Partial<CreateEmailTemplateDto>) {
+    const result = await this.service.update(parseInt(id), dto);
+    return result;
   }
 
   @Delete(':id')
   remove(@Param('id') id: string) {
-    return this.service.remove(id);
+    return this.service.remove(parseInt(id));
   }
 }

@@ -6,6 +6,7 @@ import { HealthModule } from './health/health.module';
 import { DoctorModule } from './doctor/doctor.module';
 import { DoctorScheduleModule } from './doctor-schedule/doctor-schedule.module';
 import { ConfigurationModule } from './config/config.module';
+import { EmailTemplateModule } from './email-template/email-template.module';
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ import { ConfigurationModule } from './config/config.module';
     DoctorModule,
     DoctorScheduleModule,
     ConfigurationModule,
+    EmailTemplateModule,
   ],
   providers: [PrismaService],
 })

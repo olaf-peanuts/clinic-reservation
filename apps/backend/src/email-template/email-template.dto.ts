@@ -12,5 +12,5 @@ export class CreateEmailTemplateDto {
   subject: string;
 
   @IsString()
-  body: string;      // Mustache / Handlebars テンプレート文字列
+  bodyHtml: string;      // Mustache / Handlebars テンプレート文字列
 }

@@ -10,6 +10,9 @@ import { ConfigService } from '@nestjs/config';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   
+  // グローバルプレフィックスを設定
+  app.setGlobalPrefix('api/v1');
+  
   // CORS 有効化
   app.enableCors({
     origin: '*', // 開発環境では全てのオリジンを許可

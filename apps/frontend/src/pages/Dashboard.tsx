@@ -117,10 +117,11 @@ export default function Dashboard() {
           api.get('/templates').catch(() => ({ data: [] })),
           api.get('/employees').catch(() => ({ data: [] })),
           api.get('/doctor-schedules').catch(() => ({ data: [] })),
-          api.get('/api/config/doctor-default-duration').catch(() => ({ data: { defaultDurationMinutes: 30 } })),
+          api.get('/config/doctor-default-duration').catch(() => ({ data: { defaultDurationMinutes: 30 } })),
         ]);
 
         setDoctors(doctorRes.data || []);
+        console.log('Dashboard: Templates loaded from initial fetch:', templateRes.data);
         setTemplates(templateRes.data || []);
         setEmployees(employeeRes.data || []);
         setSchedules(scheduleRes.data || []);
@@ -287,16 +288,25 @@ export default function Dashboard() {
       console.log('Sending template data:', newTemplate);
       const response = await api.post('/templates', newTemplate);
       console.log('Template created successfully:', response);
+      console.log('Response data:', response.data);
+      console.log('Response status:', response.status);
       
       setShowAddTemplateModal(false);
       setNewTemplate({ name: '', subject: '', bodyHtml: '' });
       
       // テンプレート一覧を再取得
       const templateRes = await api.get('/templates').catch(() => ({ data: [] }));
+      console.log('Templates after creation:', templateRes.data);
+      console.log('templates.length:', templateRes.data?.length || 0);
       setTemplates(templateRes.data || []);
+      console.log('State updated, templates:', templateRes.data);
+      
+      // 成功メッセージを表示
+      setToast({ message: 'テンプレートを作成しました', type: 'success' });
     } catch (err: any) {
       console.error('Error adding template:', err);
       console.error('Error details:', err.response?.data || err.message);
+      setToast({ message: 'テンプレートの作成に失敗しました', type: 'error' });
     } finally {
       setLoading(false);
     }
@@ -331,7 +341,11 @@ export default function Dashboard() {
 
       // テンプレート一覧を再取得
       const templateRes = await api.get('/templates').catch(() => ({ data: [] }));
+      console.log('Templates after update:', templateRes.data);
       setTemplates(templateRes.data || []);
+      
+      // 成功メッセージを表示
+      setToast({ message: 'テンプレートを更新しました', type: 'success' });
     } catch (err: any) {
       console.error('Error updating template:', err);
     } finally {
@@ -351,7 +365,11 @@ export default function Dashboard() {
 
       // テンプレート一覧を再取得
       const templateRes = await api.get('/templates').catch(() => ({ data: [] }));
+      console.log('Templates after deletion:', templateRes.data);
       setTemplates(templateRes.data || []);
+      
+      // 成功メッセージを表示
+      setToast({ message: 'テンプレートを削除しました', type: 'success' });
     } catch (err: any) {
       console.error('Error deleting template:', err);
     } finally {
