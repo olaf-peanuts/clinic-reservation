@@ -211,7 +211,7 @@ export default function SystemConfigPanel() {
             onClick={() => setIsDoctorTimeExpanded(!isDoctorTimeExpanded)}
             className="w-full flex items-center justify-between px-6 py-4 bg-gray-50 hover:bg-gray-100 transition-colors border-b border-gray-200"
           >
-            <h3 className="text-lg font-semibold text-gray-800">医師設定</h3>
+            <h3 className="text-lg font-semibold text-gray-800">医師登録時のデフォルト値設定</h3>
             <span className="text-2xl text-gray-600 font-bold">
               {isDoctorTimeExpanded ? '−' : '+'}
             </span>
