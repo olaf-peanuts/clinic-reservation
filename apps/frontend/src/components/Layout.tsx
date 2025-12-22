@@ -9,10 +9,6 @@ export default function Layout({ children }: { children?: ReactNode }) {
       </header>
 
       <main className="flex-1 p-6 w-full overflow-auto">{children ?? <Outlet />}</main>
-
-      <footer className="bg-gray-100 text-center py-2 flex-shrink-0 w-full">
-        © 2025 Company Clinic
-      </footer>
     </div>
   );
 }
