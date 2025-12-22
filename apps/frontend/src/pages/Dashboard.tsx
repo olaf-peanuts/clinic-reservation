@@ -95,6 +95,14 @@ export default function Dashboard() {
   });
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
 
+  // 社員呼び出し関連の状態
+  const [employeeSearchId, setEmployeeSearchId] = useState('');
+  const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
+  const [selectedDoctor, setSelectedDoctor] = useState<number | null>(null);
+  const [selectedDuration, setSelectedDuration] = useState<string>(String(systemDefaultDuration));
+  const [employeeSearchLoading, setEmployeeSearchLoading] = useState(false);
+  const [employeeSearchError, setEmployeeSearchError] = useState<string | null>(null);
+
   // データ取得
   useEffect(() => {
     console.log('Dashboard: useEffect starting');
@@ -187,6 +195,38 @@ export default function Dashboard() {
         hour.dayOfWeek === dayOfWeek ? { ...hour, [field]: value } : hour
       )
     );
+  };
+
+  // 社員番号で社員情報を検索
+  const handleSearchEmployee = async () => {
+    if (!employeeSearchId.trim()) {
+      setEmployeeSearchError('社員番号を入力してください');
+      return;
+    }
+
+    try {
+      setEmployeeSearchLoading(true);
+      setEmployeeSearchError(null);
+      
+      // AzureAD（Mock）から社員情報を取得
+      const response = await api.get(`/employees/${employeeSearchId}`);
+      const employeeData = response.data?.data || response.data;
+      
+      setSelectedEmployee({
+        id: employeeData.id || 0,
+        employeeId: employeeData.employeeNumber || employeeData.employeeId,
+        name: employeeData.name,
+        email: employeeData.email,
+        department: employeeData.department,
+      });
+      setSelectedDoctor(null);
+      setSelectedDuration(String(systemDefaultDuration));
+    } catch (err) {
+      setEmployeeSearchError((err as any).response?.data?.message || '社員が見つかりません');
+      setSelectedEmployee(null);
+    } finally {
+      setEmployeeSearchLoading(false);
+    }
   };
 
   // 診察室の部屋数読み込み
@@ -520,100 +560,155 @@ export default function Dashboard() {
           <h2 className="text-2xl font-bold mb-4">社員呼び出し</h2>
           <p className="text-gray-600 mb-6">健康状態が悪い社員をピックアップしてメールを送信します。</p>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-            <div className="bg-green-50 rounded-lg p-4">
-              <label className="block text-sm font-semibold text-gray-700">社員番号</label>
-              <select className="mt-2 w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500">
-                <option>社員を選択してください</option>
-                {employees.map(emp => (
-                  <option key={emp.id} value={emp.employeeId}>
-                    {emp.employeeId} - {emp.name}
-                  </option>
-                ))}
-              </select>
+          {/* ステップ1: 社員検索 */}
+          <div className="bg-white rounded-lg shadow p-6 mb-6">
+            <h3 className="text-lg font-semibold mb-4">ステップ1: 社員検索</h3>
+            
+            <div className="flex gap-2 mb-4">
+              <div className="flex-1">
+                <label className="block text-sm font-semibold text-gray-700 mb-2">社員番号</label>
+                <input
+                  type="text"
+                  value={employeeSearchId}
+                  onChange={(e) => setEmployeeSearchId(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && handleSearchEmployee()}
+                  placeholder="例：10012345"
+                  className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                />
+              </div>
+              <div className="flex items-end">
+                <button
+                  onClick={handleSearchEmployee}
+                  disabled={employeeSearchLoading}
+                  className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold disabled:opacity-50"
+                >
+                  {employeeSearchLoading ? '検索中...' : '検索'}
+                </button>
+              </div>
             </div>
 
-            <div className="bg-green-50 rounded-lg p-4">
-              <label className="block text-sm font-semibold text-gray-700">担当医師</label>
-              <select className="mt-2 w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500">
-                <option>医師を選択してください</option>
-                {doctors.map(doc => (
-                  <option key={doc.id} value={doc.id}>
-                    {doc.name}
-                  </option>
-                ))}
-              </select>
+            {employeeSearchError && (
+              <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm mb-4">
+                {employeeSearchError}
+              </div>
+            )}
+
+            {selectedEmployee && (
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <p className="text-sm mb-2"><strong>氏名：</strong> {selectedEmployee.name}</p>
+                <p className="text-sm mb-2"><strong>所属会社：</strong> {selectedEmployee.email?.split('@')[0] || '情報なし'}</p>
+                <p className="text-sm"><strong>所属部署：</strong> {selectedEmployee.department || '情報なし'}</p>
+              </div>
+            )}
+          </div>
+
+          {/* ステップ2: 医師・診療時間指定 */}
+          {selectedEmployee && (
+            <div className="bg-white rounded-lg shadow p-6 mb-6">
+              <h3 className="text-lg font-semibold mb-4">ステップ2: 医師・診療時間指定</h3>
+              
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="bg-green-50 rounded-lg p-4">
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">担当医師</label>
+                  <select 
+                    value={selectedDoctor || ''}
+                    onChange={(e) => setSelectedDoctor(e.target.value ? Number(e.target.value) : null)}
+                    className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                  >
+                    <option value="">医師を選択してください</option>
+                    {doctors.map(doc => (
+                      <option key={doc.id} value={doc.id}>
+                        {doc.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="bg-green-50 rounded-lg p-4">
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">診療時間（分）</label>
+                  <input
+                    type="number"
+                    value={selectedDuration}
+                    onChange={(e) => setSelectedDuration(e.target.value)}
+                    min="5"
+                    step="5"
+                    className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                  />
+                </div>
+
+                <div className="flex items-end">
+                  <button 
+                    disabled={!selectedDoctor}
+                    className="w-full px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-semibold disabled:opacity-50"
+                  >
+                    候補日時を検索
+                  </button>
+                </div>
+              </div>
             </div>
+          )}
 
-            <div className="bg-green-50 rounded-lg p-4">
-              <label className="block text-sm font-semibold text-gray-700">診療時間（分）</label>
-              <input
-                type="number"
-                placeholder={String(systemDefaultDuration)}
-                defaultValue={systemDefaultDuration}
-                className="mt-2 w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-              />
+          {/* ステップ3: 予定確認・メール送信 */}
+          {selectedEmployee && selectedDoctor && (
+            <div className="bg-gray-50 rounded-lg p-4 mb-6">
+              <h3 className="font-semibold mb-3">利用可能な診療日時（候補）</h3>
+              <div className="space-y-2">
+                <label className="flex items-center p-2 hover:bg-white rounded cursor-pointer">
+                  <input type="radio" name="appointment" className="mr-3" />
+                  <span className="text-gray-700">2025年12月10日 09:30 - 10:00</span>
+                </label>
+                <label className="flex items-center p-2 hover:bg-white rounded cursor-pointer">
+                  <input type="radio" name="appointment" className="mr-3" />
+                  <span className="text-gray-700">2025年12月10日 11:00 - 11:30</span>
+                </label>
+                <label className="flex items-center p-2 hover:bg-white rounded cursor-pointer">
+                  <input type="radio" name="appointment" className="mr-3" />
+                  <span className="text-gray-700">2025年12月11日 14:00 - 14:30</span>
+                </label>
+              </div>
             </div>
-          </div>
+          )}
 
-          <button className="mb-6 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-semibold">
-            候補日時を検索
-          </button>
+          {selectedEmployee && selectedDoctor && (
+            <>
+              <div className="bg-gray-50 rounded-lg p-4 mb-6">
+                <label className="block font-semibold text-gray-700 mb-3">メールテンプレートを選択</label>
+                <select className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500">
+                  <option>テンプレートを選択してください</option>
+                  {templates.map(tmpl => (
+                    <option key={tmpl.id} value={tmpl.id}>
+                      {tmpl.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
 
-          <div className="bg-gray-50 rounded-lg p-4 mb-6">
-            <h3 className="font-semibold mb-3">利用可能な診療日時（候補）</h3>
-            <div className="space-y-2">
-              <label className="flex items-center p-2 hover:bg-white rounded cursor-pointer">
-                <input type="radio" name="appointment" className="mr-3" />
-                <span className="text-gray-700">2025年12月10日 09:30 - 10:00</span>
-              </label>
-              <label className="flex items-center p-2 hover:bg-white rounded cursor-pointer">
-                <input type="radio" name="appointment" className="mr-3" />
-                <span className="text-gray-700">2025年12月10日 11:00 - 11:30</span>
-              </label>
-              <label className="flex items-center p-2 hover:bg-white rounded cursor-pointer">
-                <input type="radio" name="appointment" className="mr-3" />
-                <span className="text-gray-700">2025年12月11日 14:00 - 14:30</span>
-              </label>
-            </div>
-          </div>
+              <div className="bg-white border-l-4 border-blue-500 p-4 mb-6">
+                <h3 className="font-semibold mb-2">メール送信内容（プレビュー）</h3>
+                <p className="text-sm text-gray-600 mb-2">
+                  <strong>宛先：</strong> {selectedEmployee.email}
+                </p>
+                <p className="text-sm text-gray-600 mb-3">
+                  <strong>件名：</strong> メールテンプレートの件名がここに表示されます
+                </p>
+                <div className="bg-gray-50 p-3 rounded text-sm text-gray-700 border">
+                  <p>【プレビュー】</p>
+                  <p className="mt-2">
+                    メールテンプレートの本文がここに表示されます。社員名と診療日時が自動で入力されます。
+                  </p>
+                </div>
+              </div>
 
-          <div className="bg-gray-50 rounded-lg p-4 mb-6">
-            <label className="block font-semibold text-gray-700 mb-3">メールテンプレートを選択</label>
-            <select className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500">
-              <option>テンプレートを選択してください</option>
-              {templates.map(tmpl => (
-                <option key={tmpl.id} value={tmpl.id}>
-                  {tmpl.name}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="bg-white border-l-4 border-blue-500 p-4 mb-6">
-            <h3 className="font-semibold mb-2">メール送信内容（プレビュー）</h3>
-            <p className="text-sm text-gray-600 mb-2">
-              <strong>宛先：</strong> example@example.com
-            </p>
-            <p className="text-sm text-gray-600 mb-3">
-              <strong>件名：</strong> メールテンプレートの件名がここに表示されます
-            </p>
-            <div className="bg-gray-50 p-3 rounded text-sm text-gray-700 border">
-              <p>【プレビュー】</p>
-              <p className="mt-2">
-                メールテンプレートの本文がここに表示されます。社員名と診療日時が自動で入力されます。
-              </p>
-            </div>
-          </div>
-
-          <div className="flex gap-3">
-            <button className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 font-semibold">
-              メール送信
-            </button>
-            <button className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 font-semibold">
-              キャンセル
-            </button>
-          </div>
+              <div className="flex gap-3">
+                <button className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 font-semibold">
+                  メール送信
+                </button>
+                <button className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 font-semibold">
+                  キャンセル
+                </button>
+              </div>
+            </>
+          )}
         </div>
       )}
 
