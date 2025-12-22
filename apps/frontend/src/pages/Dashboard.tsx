@@ -375,7 +375,7 @@ export default function Dashboard() {
       )}
 
       {/* 左側のタブナビゲーション - フローティング */}
-      <div className="fixed left-4 top-20 w-48 bg-white shadow-lg border-r border-gray-200 h-auto max-h-[calc(100vh-100px)] overflow-y-auto z-10">
+      <div className="fixed left-3 top-20 w-48 bg-white shadow-lg border-r border-gray-200 h-auto max-h-[calc(100vh-100px)] overflow-y-auto z-10 mr-3">
         <nav className="px-0 py-4 space-y-0">
           <button
             onClick={() => setActiveTab('day')}
