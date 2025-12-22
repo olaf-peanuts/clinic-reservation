@@ -365,7 +365,7 @@ export default function Dashboard() {
   );
 
   return (
-    <div className="w-full h-screen bg-gray-50 flex">
+    <div className="w-full h-full bg-gray-50 flex">
       {toast && (
         <Toast
           message={toast.message}

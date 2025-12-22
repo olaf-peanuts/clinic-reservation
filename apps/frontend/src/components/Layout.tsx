@@ -8,7 +8,7 @@ export default function Layout({ children }: { children?: ReactNode }) {
         <h1 className="text-2xl font-bold">診療予約システム</h1>
       </header>
 
-      <main className="flex-1 p-6 w-full overflow-auto">{children ?? <Outlet />}</main>
+      <main className="flex-1 w-full overflow-hidden">{children ?? <Outlet />}</main>
     </div>
   );
 }
