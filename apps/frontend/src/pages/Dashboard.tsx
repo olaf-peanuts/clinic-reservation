@@ -365,7 +365,7 @@ export default function Dashboard() {
   );
 
   return (
-    <div className="w-full min-h-screen bg-gray-50 flex">
+    <div className="w-full h-screen bg-gray-50 flex">
       {toast && (
         <Toast
           message={toast.message}
@@ -374,8 +374,8 @@ export default function Dashboard() {
         />
       )}
 
-      {/* 左側のタブナビゲーション */}
-      <div className="w-48 bg-white shadow min-h-screen border-r border-gray-200">
+      {/* 左側のタブナビゲーション - フローティング */}
+      <div className="fixed left-4 top-20 w-48 bg-white shadow-lg border-r border-gray-200 h-auto max-h-[calc(100vh-100px)] overflow-y-auto z-10">
         <nav className="px-0 py-4 space-y-0">
           <button
             onClick={() => setActiveTab('day')}
@@ -451,7 +451,7 @@ export default function Dashboard() {
       </div>
 
       {/* 右側のコンテンツエリア */}
-      <div className="flex-1 px-3 py-6">
+      <div className="flex-1 ml-48 px-3 py-6 flex flex-col overflow-hidden">
         {(() => {
           console.log('Dashboard rendering, activeTab:', activeTab);
           return null;
