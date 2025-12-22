@@ -376,9 +376,6 @@ export default function Dashboard() {
 
       {/* 左側のタブナビゲーション */}
       <div className="w-48 bg-white shadow min-h-screen border-r border-gray-200">
-        <div className="sticky top-0 bg-white border-b border-gray-200">
-          <h1 className="px-6 py-4 font-bold text-lg text-gray-800">ダッシュボード</h1>
-        </div>
         <nav className="px-0 py-4 space-y-0">
           <button
             onClick={() => setActiveTab('day')}
